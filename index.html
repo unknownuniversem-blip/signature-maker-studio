@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>Exam Signature Studio - Draw, Clean & Resize Signatures (100% Private)</title>
-  <meta name="description" content="100% Free & In-Browser Exam Signature Maker. Draw clean digital signatures, remove paper background shadows, invert ink colors, and export exact KB sizes for SSC, UPSC, and Bank forms.">
+  <meta name="description" content="100% Free & In-Browser Exam Signature Maker. Smooth zero-lag digital signatures, remove paper background shadows, invert ink colors, and export exact KB sizes for SSC, UPSC, and Bank forms.">
 
   <!-- Privacy Analytics -->
   <script data-goatcounter="https://quicktools.goatcounter.com/count"
@@ -197,10 +197,13 @@
       margin-bottom: 1rem;
       cursor: crosshair;
       touch-action: none;
+      user-select: none;
+      -webkit-user-select: none;
     }
     #signaturePad {
       display: block;
-      background: transparent;
+      background: #ffffff;
+      touch-action: none;
     }
     .canvas-tools-bar {
       display: flex;
@@ -448,8 +451,6 @@
       <span style="color:#334155;">|</span>
       <a href="https://unknownuniversem-blip.github.io/upi-qr-standee/" style="color:#10b981; text-decoration:none; font-weight:600; white-space:nowrap;">💳 UPI Standee</a>
       <span style="color:#334155;">|</span>
-      <a href="https://unknownuniversem-blip.github.io/krutidev-unicode-converter/" style="color:#38bdf8; text-decoration:none; font-weight:600; white-space:nowrap;">🔤 फॉन्ट कनवर्टर</a>
-      <span style="color:#334155;">|</span>
       <a href="https://unknownuniversem-blip.github.io/age-eligibility-calc/" style="color:#38bdf8; text-decoration:none; font-weight:600; white-space:nowrap;">⏱ आयु व पात्रता</a>
     </div>
   </div>
@@ -487,9 +488,9 @@
 
         <label id="lblPreset">Exam Dimension Preset</label>
         <select id="selPreset" onchange="applyPreset()">
-          <option value="ssc">SSC / UPSSSC (140 x 60 px)</option>
-          <option value="upsc">UPSC / Civil Services (350 x 350 px)</option>
-          <option value="ibps">IBPS / Bank PO (140 x 60 px - 10 to 20 KB)</option>
+          <option value="ssc" selected>SSC / UPSSSC (140 x 60 px ratio)</option>
+          <option value="upsc">UPSC / Civil Services (350 x 350 px ratio)</option>
+          <option value="ibps">IBPS / Bank PO (140 x 60 px ratio)</option>
           <option value="custom">Free Ratio (450 x 200 px)</option>
         </select>
 
@@ -501,9 +502,9 @@
 
         <label id="lblPenSize">Stroke Thickness</label>
         <select id="selPenSize">
-          <option value="2">Fine Ball Pen (पतली)</option>
-          <option value="3" selected>Standard Gel Pen (मध्यम)</option>
-          <option value="4">Bold Marker (मोटी)</option>
+          <option value="2.2">Fine Ball Pen (पतली)</option>
+          <option value="3.5" selected>Standard Gel Pen (मध्यम)</option>
+          <option value="5">Bold Marker (मोटी)</option>
         </select>
 
         <label id="lblBg">Background Type</label>
@@ -527,7 +528,7 @@
 
       <div class="card" style="text-align:center;">
         <div class="canvas-wrap" id="canvasWrap">
-          <canvas id="signaturePad" width="450" height="200"></canvas>
+          <canvas id="signaturePad" width="466" height="200"></canvas>
         </div>
 
         <div class="canvas-tools-bar">
@@ -535,7 +536,7 @@
           <button class="btn-tool" onclick="undoCanvas()" id="btnUndo">↩️ Undo (पूर्ववत)</button>
         </div>
 
-        <p style="font-size:0.75rem; color:var(--muted);" id="txtDrawHelp">Draw directly using finger, stylus, or mouse above.</p>
+        <p style="font-size:0.75rem; color:var(--muted);" id="txtDrawHelp">Draw directly using finger, stylus, or mouse above (Instant response, zero lag).</p>
       </div>
     </div>
 
@@ -662,8 +663,9 @@
     const canvas = document.getElementById('signaturePad');
     const ctx = canvas.getContext('2d');
     let isDrawing = false;
-    let paths = [];
-    let currentPath = [];
+    let strokes = []; // Array of canvas image snapshots for instant 1-step undo
+    let lastX = 0;
+    let lastY = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
       initCanvasEvents();
@@ -677,6 +679,7 @@
       document.getElementById('tabBtnClean').classList.toggle('active', tab === 'clean');
     }
 
+    // ZERO-LAG INCREMENTAL DRAWING PIPELINE
     function initCanvasEvents() {
       const getPos = (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -689,30 +692,46 @@
       };
 
       const start = (e) => {
+        e.preventDefault();
         isDrawing = true;
-        currentPath = [];
+        // Save current canvas state for Undo
+        saveState();
+
         const pos = getPos(e);
-        currentPath.push(pos);
+        lastX = pos.x;
+        lastY = pos.y;
+
+        // Draw initial dot for single clicks/taps
+        ctx.beginPath();
+        ctx.fillStyle = document.getElementById('selInkColor').value;
+        const radius = Number(document.getElementById('selPenSize').value) / 2;
+        ctx.arc(lastX, lastY, radius, 0, Math.PI * 2);
+        ctx.fill();
       };
 
       const move = (e) => {
         if (!isDrawing) return;
         e.preventDefault();
         const pos = getPos(e);
-        currentPath.push(pos);
-        redraw();
+
+        ctx.beginPath();
+        ctx.strokeStyle = document.getElementById('selInkColor').value;
+        ctx.lineWidth = Number(document.getElementById('selPenSize').value);
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+
+        // Direct point-to-point drawing (instant response, O(1) execution)
+        ctx.moveTo(lastX, lastY);
+        ctx.lineTo(pos.x, pos.y);
+        ctx.stroke();
+
+        lastX = pos.x;
+        lastY = pos.y;
       };
 
-      const stop = () => {
+      const stop = (e) => {
         if (isDrawing) {
           isDrawing = false;
-          if (currentPath.length > 0) {
-            paths.push({
-              points: currentPath,
-              color: document.getElementById('selInkColor').value,
-              size: Number(document.getElementById('selPenSize').value)
-            });
-          }
         }
       };
 
@@ -725,65 +744,56 @@
       window.addEventListener('touchend', stop);
     }
 
-    function redraw() {
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-      for (let p of paths) {
-        drawStroke(p.points, p.color, p.size);
-      }
-      if (currentPath.length > 0) {
-        drawStroke(
-          currentPath,
-          document.getElementById('selInkColor').value,
-          Number(document.getElementById('selPenSize').value)
-        );
-      }
-    }
-
-    function drawStroke(pts, color, size) {
-      if (pts.length < 2) return;
-      ctx.beginPath();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.moveTo(pts[0].x, pts[0].y);
-      for (let i = 1; i < pts.length; i++) {
-        ctx.lineTo(pts[i].x, pts[i].y);
-      }
-      ctx.stroke();
-    }
-
-    function clearCanvas() {
-      paths = [];
-      currentPath = [];
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+    function saveState() {
+      // Store state as image data for immediate undo
+      if (strokes.length > 20) strokes.shift();
+      strokes.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
     }
 
     function undoCanvas() {
-      paths.pop();
-      redraw();
+      if (strokes.length > 0) {
+        const lastState = strokes.pop();
+        ctx.putImageData(lastState, 0, 0);
+      } else {
+        clearCanvas();
+      }
+    }
+
+    function clearCanvas() {
+      strokes = [];
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
     }
 
     function applyPreset() {
       const p = document.getElementById('selPreset').value;
+      let w = 466, h = 200;
+
       if (p === 'ssc' || p === 'ibps') {
-        canvas.width = 420;
-        canvas.height = 180;
+        w = 420; h = 180;
         document.getElementById('drawFileName').value = 'ssc_signature_140x60';
       } else if (p === 'upsc') {
-        canvas.width = 350;
-        canvas.height = 350;
+        w = 320; h = 320;
         document.getElementById('drawFileName').value = 'upsc_signature_350x350';
       } else {
-        canvas.width = 450;
-        canvas.height = 200;
+        w = 466; h = 200;
+        document.getElementById('drawFileName').value = 'custom_signature';
       }
-      redraw();
+
+      canvas.width = w;
+      canvas.height = h;
+      clearCanvas();
+    }
+
+    function isCanvasEmpty(cvs) {
+      const c = cvs.getContext('2d');
+      const pixelBuffer = new Uint32Array(
+        c.getImageData(0, 0, cvs.width, cvs.height).data.buffer
+      );
+      return !pixelBuffer.some(color => color !== 0);
     }
 
     function downloadDrawnSignature() {
-      if (paths.length === 0) {
+      if (isCanvasEmpty(canvas)) {
         alert(currentLang === 'en' ? 'Please draw your signature first!' : 'कृपया पहले अपना हस्ताक्षर बनाएं!');
         return;
       }
@@ -801,18 +811,18 @@
       eCtx.drawImage(canvas, 0, 0);
 
       const userFileName = document.getElementById('drawFileName').value.trim() || 'exam_signature';
-      const cleanName = userFileName.replace(/[^a-zA-Z0-9_\-\u0900-\u097F]/g, '_').replace(/\.jpg$/i, '') + '.jpg';
+      const cleanName = userFileName.replace(/[^a-zA-Z0-9_\-\u0900-\u097F]/g, '_').replace(/\.(jpg|png)$/i, '') + (bgType === 'transparent' ? '.png' : '.jpg');
 
       const link = document.createElement('a');
       link.download = cleanName;
-      link.href = exportCanvas.toDataURL('image/jpeg', 0.9);
+      link.href = exportCanvas.toDataURL(bgType === 'transparent' ? 'image/png' : 'image/jpeg', 0.9);
       link.click();
 
       document.getElementById('modalFileName').innerText = cleanName;
       document.getElementById('completionModal').classList.add('active');
     }
 
-    // PHOTO CLEANER ENGINE
+    // PHOTO CLEANER ENGINE (Paper Shadow Stripping)
     let originalPhotoImg = null;
 
     function handlePhotoUpload(file) {
@@ -834,15 +844,25 @@
     function reprocessPhoto() {
       if (!originalPhotoImg) return;
       const pCanvas = document.getElementById('photoPreviewCanvas');
-      pCanvas.width = originalPhotoImg.width;
-      pCanvas.height = originalPhotoImg.height;
-      const pCtx = pCanvas.getContext('2d');
-      pCtx.drawImage(originalPhotoImg, 0, 0);
 
-      const imgData = pCtx.getImageData(0, 0, pCanvas.width, pCanvas.height);
+      // Constrain preview to realistic dimensions (max 900px)
+      let w = originalPhotoImg.width;
+      let h = originalPhotoImg.height;
+      if (w > 900) {
+        h = Math.round((h * 900) / w);
+        w = 900;
+      }
+
+      pCanvas.width = w;
+      pCanvas.height = h;
+      const pCtx = pCanvas.getContext('2d');
+      pCtx.drawImage(originalPhotoImg, 0, 0, w, h);
+
+      const imgData = pCtx.getImageData(0, 0, w, h);
       const d = imgData.data;
       const threshold = Number(document.getElementById('selContrast').value);
 
+      // Remove paper texture and normalize ink
       for (let i = 0; i < d.length; i += 4) {
         const gray = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
         if (gray > threshold) {
@@ -850,9 +870,9 @@
           d[i+1] = 255;
           d[i+2] = 255;
         } else {
-          d[i] = 10;
-          d[i+1] = 10;
-          d[i+2] = 10;
+          d[i] = 15;
+          d[i+1] = 15;
+          d[i+2] = 15;
         }
       }
       pCtx.putImageData(imgData, 0, 0);
@@ -897,7 +917,7 @@
         document.getElementById('lblBg').innerText = 'बैकग्राउंड प्रकार:';
         document.getElementById('lblDrawFilename').innerText = 'डाउनलोड फाइल का नाम:';
         document.getElementById('btnDownloadDraw').innerText = '📥 हस्ताक्षर डाउनलोड करें (JPG)';
-        document.getElementById('txtDrawHelp').innerText = 'उंगली, स्टाइलस या माउस से ऊपर सफेद बॉक्स में साइन करें।';
+        document.getElementById('txtDrawHelp').innerText = 'उंगली, स्टाइलस या माउस से ऊपर सफेद बॉक्स में साइन करें (बिना किसी लैग के)।';
         document.getElementById('txtZeroStorage').innerText = '100% प्राइवेट: आपका हस्ताक्षर किसी सर्वर पर नहीं भेजा जाता। सभी प्रोसेसिंग आपके ब्राउज़र के अंदर होती है।';
       } else {
         document.getElementById('btnLangText').innerText = 'हिंदी में बदलें (Hindi)';
@@ -913,7 +933,7 @@
         document.getElementById('lblBg').innerText = 'Background Type';
         document.getElementById('lblDrawFilename').innerText = 'Output Filename:';
         document.getElementById('btnDownloadDraw').innerText = '📥 Download Exam Signature (JPG)';
-        document.getElementById('txtDrawHelp').innerText = 'Draw directly using finger, stylus, or mouse above.';
+        document.getElementById('txtDrawHelp').innerText = 'Draw directly using finger, stylus, or mouse above (Instant response, zero lag).';
         document.getElementById('txtZeroStorage').innerText = '100% Private & In-Browser: Your handwritten signature is never uploaded to any cloud or database. The image renders directly in your device GPU/Canvas RAM.';
       }
     }
