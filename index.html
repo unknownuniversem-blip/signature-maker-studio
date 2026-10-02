@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
   <title>Exam Signature Studio - Draw, Clean & Calibrate KB (100% Private)</title>
-  <meta name="description" content="100% Free & In-Browser Exam Signature Maker. Instant zero-delay digital signatures, auto whitespace trimmer, shadow remover, and exact 10KB-20KB calibrator for SSC and UPSC.">
+  <meta name="description" content="100% Free & In-Browser Exam Signature Maker. Full surface digital signature pad, auto whitespace trimmer, shadow remover, and exact 10KB-20KB calibrator.">
 
   <!-- Privacy Analytics -->
   <script data-goatcounter="https://quicktools.goatcounter.com/count"
@@ -184,17 +184,16 @@
     }
     select:focus, input:focus { border-color: var(--border-focus); }
 
-    /* Canvas Drawing Area */
+    /* FULL-BLEED DRAWING AREA */
     .canvas-wrap {
       background: #ffffff;
       border-radius: 8px;
       border: 2px dashed #94a3b8;
-      display: flex;
-      justify-content: center;
-      align-items: center;
+      display: block;
+      width: 100%;
+      height: 260px;
       position: relative;
       margin-bottom: 1rem;
-      cursor: crosshair;
       touch-action: none;
       user-select: none;
       -webkit-user-select: none;
@@ -202,27 +201,33 @@
     }
     #signaturePad {
       display: block;
+      width: 100%;
+      height: 100%;
       background: #ffffff;
       touch-action: none;
       cursor: crosshair;
     }
+
     .canvas-tools-bar {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
       gap: 8px;
       margin-bottom: 1rem;
-      flex-wrap: wrap;
     }
     .btn-tool {
-      flex: 1;
-      min-width: 90px;
-      padding: 8px;
-      font-size: 0.8rem;
+      padding: 9px;
+      font-size: 0.82rem;
       font-weight: 700;
       background: var(--card-inner);
       border: 1px solid var(--border);
       color: var(--text);
       border-radius: 6px;
       cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      transition: all 0.15s ease;
     }
     .btn-tool:hover { border-color: var(--primary); color: var(--primary); }
 
@@ -431,59 +436,6 @@
       font-size: 0.75rem;
       color: var(--muted);
     }
-  
-    /* --- COMPREHENSIVE MOBILE RESPONSIVENESS OVERRIDES --- */
-    html, body {
-      max-width: 100vw !important;
-      overflow-x: hidden !important;
-      -webkit-text-size-adjust: 100% !important;
-    }
-    *, *::before, *::after {
-      box-sizing: border-box !important;
-    }
-    input, select, textarea, button {
-      font-size: 16px !important; /* Prevents auto-zoom on iOS inputs */
-      min-height: 42px !important; /* Optimal touch target */
-    }
-    #quicktools-global-bar div::-webkit-scrollbar {
-      display: none !important;
-    }
-    #quicktools-global-bar div {
-      -ms-overflow-style: none !important;
-      scrollbar-width: none !important;
-      -webkit-overflow-scrolling: touch !important;
-    }
-    .canvas-wrap, .qr-frame, .dropzone {
-      max-width: 100% !important;
-      box-sizing: border-box !important;
-    }
-    canvas {
-      max-width: 100% !important;
-      height: auto !important;
-    }
-    .modal-card {
-      max-width: calc(100vw - 32px) !important;
-      margin: 16px !important;
-    }
-    @media (max-width: 640px) {
-      .container {
-        padding: 0.85rem 0.75rem 2.5rem 0.75rem !important;
-      }
-      .studio-grid, .converter-grid, .input-row, .modal-apps-grid {
-        grid-template-columns: 1fr !important;
-        gap: 10px !important;
-      }
-      header h1 {
-        font-size: 1.35rem !important;
-      }
-      .tabs-nav {
-        grid-template-columns: 1fr !important;
-      }
-      .brand-box {
-        justify-content: center !important;
-      }
-    }
-
   </style>
 </head>
 <body>
@@ -520,7 +472,7 @@
             <path d="M8 22c4-8 7-10 11-12 2 4-5 11-9 12zm0 0l-2 3 3-1z" fill="#38bdf8"/>
           </svg>
           <span class="brand-name">Signature<span style="color:var(--primary);">Studio</span></span>
-          <span class="brand-badge">Hardware Touch Ready</span>
+          <span class="brand-badge">Full Edge-to-Edge Canvas</span>
         </div>
         <button type="button" class="lang-toggle-btn" onclick="toggleLanguage()">
           🌐 <span id="btnLangText">हिंदी में बदलें (Hindi)</span>
@@ -547,7 +499,7 @@
           <option value="ssc" selected>SSC / UPSSSC (140 x 60 px • 10-20 KB)</option>
           <option value="upsc">UPSC / Civil Services (350 x 350 px • 20-50 KB)</option>
           <option value="ibps">IBPS / SBI Clerk (140 x 60 px • 10-20 KB)</option>
-          <option value="custom">Free Ratio (480 x 200 px)</option>
+          <option value="custom">Full Free Pad (पूर्ण स्क्रीन पैड)</option>
         </select>
 
         <label id="lblTargetKb">File Size Calibrator</label>
@@ -591,16 +543,17 @@
 
       <div class="card" style="text-align:center;">
         <div class="canvas-wrap" id="canvasWrap">
-          <canvas id="signaturePad" width="480" height="200"></canvas>
+          <canvas id="signaturePad"></canvas>
         </div>
 
         <div class="canvas-tools-bar">
-          <button class="btn-tool" onclick="clearCanvas()" id="btnClear">🗑️ Clear (साफ करें)</button>
-          <button class="btn-tool" onclick="undoCanvas()" id="btnUndo">↩️ Undo (पूर्ववत)</button>
-          <button class="btn-tool" onclick="autoCropSignature()" id="btnCrop" style="color:var(--primary); border-color:rgba(56,189,248,0.4);">✂️ Trim Margins (मार्जिन काटें)</button>
+          <button class="btn-tool" onclick="clearCanvas()" id="btnClear">🗑️ Clear</button>
+          <button class="btn-tool" onclick="undoCanvas()" id="btnUndo">↩️ Undo</button>
+          <button class="btn-tool" onclick="autoCropSignature()" id="btnCrop" style="color:var(--primary); border-color:rgba(56,189,248,0.4);">✂️ Trim Margins</button>
+          <button class="btn-tool" onclick="revertMargins()" id="btnRevert" style="display:none; color:var(--accent);">🔄 Revert Trim</button>
         </div>
 
-        <p style="font-size:0.75rem; color:var(--muted);" id="txtDrawHelp">Draw directly using finger, stylus, or mouse above (Instant 0ms response).</p>
+        <p style="font-size:0.75rem; color:var(--muted);" id="txtDrawHelp">Draw directly anywhere inside the white surface (100% active drawing area, 0ms latency).</p>
       </div>
     </div>
 
@@ -724,26 +677,74 @@
 
   <script>
     let currentLang = 'en';
+    const canvasWrap = document.getElementById('canvasWrap');
     const canvas = document.getElementById('signaturePad');
     const ctx = canvas.getContext('2d', { willReadFrequently: true });
     let isDrawing = false;
-    let strokes = [];
+    let historyStack = []; // Stack holding { width, height, data }
+    let preCropSnapshot = null;
     let lastX = 0;
     let lastY = 0;
 
     window.addEventListener('DOMContentLoaded', () => {
+      initCanvasSize();
       initPointerEvents();
       applyPreset();
     });
+
+    window.addEventListener('resize', () => {
+      // Re-fit canvas width responsively without clearing drawn content
+      if (historyStack.length > 0) {
+        const last = historyStack[historyStack.length - 1];
+        fitCanvasToWrapPreserving(last);
+      }
+    });
+
+    function initCanvasSize() {
+      const rect = canvasWrap.getBoundingClientRect();
+      canvas.width = Math.round(rect.width);
+      canvas.height = Math.round(rect.height);
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      saveState();
+    }
+
+    function fitCanvasToWrapPreserving(snapshot) {
+      const rect = canvasWrap.getBoundingClientRect();
+      const newW = Math.round(rect.width);
+      const newH = Math.round(rect.height);
+
+      if (newW === canvas.width && newH === canvas.height) return;
+
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = snapshot.width;
+      tempCanvas.height = snapshot.height;
+      const tCtx = tempCanvas.getContext('2d');
+      tCtx.putImageData(snapshot.data, 0, 0);
+
+      canvas.width = newW;
+      canvas.height = newH;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(tempCanvas, 0, 0);
+      saveState();
+    }
 
     function switchTab(tab) {
       document.getElementById('viewDraw').style.display = (tab === 'draw') ? 'grid' : 'none';
       document.getElementById('viewClean').style.display = (tab === 'clean') ? 'grid' : 'none';
       document.getElementById('tabBtnDraw').classList.toggle('active', tab === 'draw');
       document.getElementById('tabBtnClean').classList.toggle('active', tab === 'clean');
+
+      if (tab === 'draw') {
+        const rect = canvasWrap.getBoundingClientRect();
+        if (canvas.width !== Math.round(rect.width)) {
+          initCanvasSize();
+        }
+      }
     }
 
-    // POINTER API: 0ms LATENCY & ZERO CLICK DELAY
+    // 100% RELIABLE POINTER API
     function initPointerEvents() {
       const getPos = (e) => {
         const rect = canvas.getBoundingClientRect();
@@ -797,7 +798,6 @@
         if (isDrawing) {
           isDrawing = false;
           try { canvas.releasePointerCapture(e.pointerId); } catch (_) {}
-          // Save state for undo only after pen lift
           saveState();
         }
       };
@@ -807,22 +807,40 @@
     }
 
     function saveState() {
-      if (strokes.length > 25) strokes.shift();
-      strokes.push(ctx.getImageData(0, 0, canvas.width, canvas.height));
+      if (historyStack.length > 20) historyStack.shift();
+      historyStack.push({
+        width: canvas.width,
+        height: canvas.height,
+        data: ctx.getImageData(0, 0, canvas.width, canvas.height)
+      });
     }
 
+    // MULTI-LEVEL UNDO (RESTORES DRAWINGS AND TRIM STATES)
     function undoCanvas() {
-      if (strokes.length > 1) {
-        strokes.pop();
-        const prevState = strokes[strokes.length - 1];
-        ctx.putImageData(prevState, 0, 0);
+      if (historyStack.length > 1) {
+        historyStack.pop();
+        const prev = historyStack[historyStack.length - 1];
+        canvas.width = prev.width;
+        canvas.height = prev.height;
+        ctx.putImageData(prev.data, 0, 0);
+
+        if (preCropSnapshot && (canvas.width === preCropSnapshot.width && canvas.height === preCropSnapshot.height)) {
+          document.getElementById('btnRevert').style.display = 'none';
+        }
       } else {
         clearCanvas();
       }
     }
 
     function clearCanvas() {
-      strokes = [];
+      historyStack = [];
+      preCropSnapshot = null;
+      document.getElementById('btnRevert').style.display = 'none';
+
+      const rect = canvasWrap.getBoundingClientRect();
+      canvas.width = Math.round(rect.width);
+      canvas.height = Math.round(rect.height);
+
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       saveState();
@@ -830,27 +848,19 @@
 
     function applyPreset() {
       const p = document.getElementById('selPreset').value;
-      let w = 480, h = 200;
 
       if (p === 'ssc' || p === 'ibps') {
-        w = 420; h = 180;
         document.getElementById('drawFileName').value = 'ssc_signature_140x60';
         document.getElementById('selTargetKb').value = '15';
       } else if (p === 'upsc') {
-        w = 350; h = 350;
         document.getElementById('drawFileName').value = 'upsc_signature_350x350';
         document.getElementById('selTargetKb').value = '35';
       } else {
-        w = 480; h = 200;
         document.getElementById('drawFileName').value = 'custom_signature';
       }
-
-      canvas.width = w;
-      canvas.height = h;
-      clearCanvas();
     }
 
-    // AUTOMATIC WHITESPACE TRIMMER (Removes excess blank borders)
+    // AUTOMATIC WHITESPACE TRIMMER WITH UNDO HOOK
     function autoCropSignature() {
       const imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const d = imgData.data;
@@ -859,7 +869,6 @@
       for (let y = 0; y < canvas.height; y++) {
         for (let x = 0; x < canvas.width; x++) {
           const idx = (y * canvas.width + x) * 4;
-          // Look for non-white pixels
           if (d[idx] < 240 || d[idx+1] < 240 || d[idx+2] < 240) {
             if (x < minX) minX = x;
             if (x > maxX) maxX = x;
@@ -870,11 +879,18 @@
       }
 
       if (minX > maxX || minY > maxY) {
-        alert(currentLang === 'en' ? 'Canvas is empty! Draw something first.' : 'कैनवास खाली है! पहले साइन करें।');
+        alert(currentLang === 'en' ? 'Canvas is blank! Draw your signature first.' : 'कैनवास खाली है! पहले साइन करें।');
         return;
       }
 
-      const padding = 12;
+      // Save pre-crop snapshot for Revert button
+      preCropSnapshot = {
+        width: canvas.width,
+        height: canvas.height,
+        data: ctx.getImageData(0, 0, canvas.width, canvas.height)
+      };
+
+      const padding = 16;
       const cropX = Math.max(0, minX - padding);
       const cropY = Math.max(0, minY - padding);
       const cropW = Math.min(canvas.width - cropX, (maxX - minX) + padding * 2);
@@ -887,7 +903,18 @@
       ctx.fillStyle = "#ffffff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       ctx.putImageData(croppedData, 0, 0);
+
       saveState();
+      document.getElementById('btnRevert').style.display = 'inline-flex';
+    }
+
+    function revertMargins() {
+      if (!preCropSnapshot) return;
+      canvas.width = preCropSnapshot.width;
+      canvas.height = preCropSnapshot.height;
+      ctx.putImageData(preCropSnapshot.data, 0, 0);
+      saveState();
+      document.getElementById('btnRevert').style.display = 'none';
     }
 
     function isCanvasBlank() {
@@ -899,7 +926,7 @@
       return true;
     }
 
-    // BINARY SEARCH EXACT KB COMPRESSION
+    // EXACT KB TARGET COMPRESSOR
     async function calibrateAndDownload(exportCanvas, cleanName, targetKbVal, bgType) {
       const mime = (bgType === 'transparent') ? 'image/png' : 'image/jpeg';
       let blob;
@@ -1043,8 +1070,11 @@
         document.getElementById('lblBg').innerText = 'बैकग्राउंड प्रकार:';
         document.getElementById('lblDrawFilename').innerText = 'डाउनलोड फाइल का नाम:';
         document.getElementById('btnDownloadDraw').innerText = '📥 हस्ताक्षर डाउनलोड करें (JPG)';
+        document.getElementById('btnClear').innerText = '🗑️ साफ करें';
+        document.getElementById('btnUndo').innerText = '↩️ पूर्ववत (Undo)';
         document.getElementById('btnCrop').innerText = '✂️ खाली मार्जिन काटें';
-        document.getElementById('txtDrawHelp').innerText = 'उंगली, स्टाइलस या माउस से ऊपर सफेद बॉक्स में साइन करें (0ms तुरंत रिस्पॉन्स)।';
+        document.getElementById('btnRevert').innerText = '🔄 मार्जिन रीसेट';
+        document.getElementById('txtDrawHelp').innerText = 'सफेद हिस्से में कहीं भी साइन करें (100% सक्रिय क्षेत्र, 0ms तत्काल रिस्पॉन्स)।';
         document.getElementById('txtZeroStorage').innerText = '100% प्राइवेट: आपका हस्ताक्षर किसी सर्वर पर नहीं भेजा जाता। सभी प्रोसेसिंग आपके ब्राउज़र के अंदर होती है।';
       } else {
         document.getElementById('btnLangText').innerText = 'हिंदी में बदलें (Hindi)';
@@ -1061,8 +1091,11 @@
         document.getElementById('lblBg').innerText = 'Background Type';
         document.getElementById('lblDrawFilename').innerText = 'Output Filename:';
         document.getElementById('btnDownloadDraw').innerText = '📥 Download Exam Signature (JPG)';
+        document.getElementById('btnClear').innerText = '🗑️ Clear';
+        document.getElementById('btnUndo').innerText = '↩️ Undo';
         document.getElementById('btnCrop').innerText = '✂️ Trim Margins';
-        document.getElementById('txtDrawHelp').innerText = 'Draw directly using finger, stylus, or mouse above (Instant 0ms response).';
+        document.getElementById('btnRevert').innerText = '🔄 Revert Trim';
+        document.getElementById('txtDrawHelp').innerText = 'Draw directly anywhere inside the white surface (100% active drawing area, 0ms latency).';
         document.getElementById('txtZeroStorage').innerText = '100% Private & In-Browser: Your handwritten signature is never uploaded to any cloud or database. The image renders directly in your device GPU/Canvas RAM.';
       }
     }
